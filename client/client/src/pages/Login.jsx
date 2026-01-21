@@ -4,6 +4,7 @@ import { supabase } from '../supabase';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState(''); // New State
   const [isSignUp, setIsSignUp] = useState(false);
   const [role, setRole] = useState('student');
   const [username, setUsername] = useState('');
@@ -11,6 +12,12 @@ export default function Login() {
   const handleAuth = async (e) => {
     e.preventDefault();
     if (isSignUp) {
+      // New Validation Logic
+      if (password !== confirmPassword) {
+        alert("Passwords do not match!");
+        return;
+      }
+      
       const { error } = await supabase.auth.signUp({
         email, password,
         options: { data: { username, role } }
@@ -39,9 +46,14 @@ export default function Login() {
         )}
 
         <input className="w-full p-2 mb-2 border rounded" type="email" placeholder="Email" onChange={e => setEmail(e.target.value)} required />
-        <input className="w-full p-2 mb-4 border rounded" type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} required />
+        <input className="w-full p-2 mb-2 border rounded" type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} required />
         
-        <button className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
+        {/* New Confirm Password Field */}
+        {isSignUp && (
+           <input className="w-full p-2 mb-4 border rounded" type="password" placeholder="Confirm Password" onChange={e => setConfirmPassword(e.target.value)} required />
+        )}
+        
+        <button className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 mt-2">
           {isSignUp ? 'Create Account' : 'Sign In'}
         </button>
         <p className="mt-4 text-center cursor-pointer text-blue-500" onClick={() => setIsSignUp(!isSignUp)}>

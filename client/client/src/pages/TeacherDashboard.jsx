@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 export default function TeacherDashboard({ session }) {
   const [quizzes, setQuizzes] = useState([]);
   const [students, setStudents] = useState([]);
+  const [assigningQuiz, setAssigningQuiz] = useState(null); // Tracks which quiz is being assigned
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,23 +30,31 @@ export default function TeacherDashboard({ session }) {
     if (data) setQuizzes([...quizzes, data[0]]);
   };
 
-  const assignStudent = async (quizId) => {
-    const studentUsername = prompt("Enter student username to assign:");
-    const student = students.find(s => s.username === studentUsername);
-    if (student) {
-      await supabase.from('assignments').insert({ quiz_id: quizId, student_id: student.id });
-      alert('Assigned!');
-    } else {
-      alert('Student not found');
-    }
-  };
-
   const startQuiz = (quizId) => {
     navigate(`/host/${quizId}`);
   };
 
+  // Assign Logic
+  const handleAssign = async (studentId) => {
+    const { error } = await supabase.from('assignments').insert({ 
+      quiz_id: assigningQuiz.id, 
+      student_id: studentId 
+    });
+
+    if (error) {
+      if (error.code === '23505') { // Unique constraint violation code
+         alert("This student is already assigned to this quiz.");
+      } else {
+         alert("Error assigning: " + error.message);
+      }
+    } else {
+      alert("Student assigned successfully!");
+    }
+  };
+
   return (
     <div className="p-8 max-w-4xl mx-auto">
+      {/* HEADER */}
       <div className="flex justify-between items-center mb-8 border-b pb-4">
         <div>
           <h1 className="text-3xl font-bold">Teacher Dashboard</h1>
@@ -61,6 +70,7 @@ export default function TeacherDashboard({ session }) {
         </div>
       </div>
 
+      {/* QUIZ LIST */}
       <div className="grid gap-4">
         {quizzes.map(quiz => (
           <div key={quiz.id} className="bg-white p-6 rounded shadow flex justify-between items-center">
@@ -77,12 +87,62 @@ export default function TeacherDashboard({ session }) {
               >
                 Edit Questions
               </button>
-              <button onClick={() => assignStudent(quiz.id)} className="bg-blue-100 text-blue-700 px-3 py-1 rounded">Assign Student</button>
-              <button onClick={() => startQuiz(quiz.id)} className="bg-purple-600 text-white px-3 py-1 rounded">Launch</button>
+              
+              <button 
+                onClick={() => setAssigningQuiz(quiz)} 
+                className="bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200"
+              >
+                Assign Student
+              </button>
+              
+              <button 
+                onClick={() => startQuiz(quiz.id)} 
+                className="bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 shadow"
+              >
+                Launch
+              </button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* ASSIGNMENT MODAL */}
+      {assigningQuiz && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4 border-b pb-2">
+              <h2 className="text-xl font-bold">Assign to: {assigningQuiz.title}</h2>
+              <button onClick={() => setAssigningQuiz(null)} className="text-gray-500 hover:text-gray-800 font-bold text-xl">
+                &times;
+              </button>
+            </div>
+            
+            {students.length === 0 ? (
+              <p className="text-gray-500 text-center">No students registered yet.</p>
+            ) : (
+              <ul className="space-y-2">
+                {students.map(student => (
+                  <li key={student.id} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded border">
+                    <span className="font-semibold">{student.username}</span>
+                    <button 
+                      onClick={() => handleAssign(student.id)}
+                      className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                    >
+                      Assign
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            
+            <div className="mt-6 text-right">
+              <button onClick={() => setAssigningQuiz(null)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
