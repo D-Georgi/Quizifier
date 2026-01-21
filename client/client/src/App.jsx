@@ -7,6 +7,7 @@ import StudentDashboard from './pages/StudentDashboard';
 import HostGame from './pages/HostGame';
 import PlayGame from './pages/PlayGame';
 import ReviewGame from './pages/ReviewGame';
+import EditQuiz from './pages/EditQuiz';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -26,6 +27,7 @@ export default function App() {
           <Route path="/" element={!session ? <Login /> : <Navigate to="/dashboard" />} />
           <Route path="/dashboard" element={session ? <RoleRouter session={session} /> : <Navigate to="/" />} />
           <Route path="/host/:quizId" element={session ? <HostGame /> : <Navigate to="/" />} />
+          <Route path="/edit/:quizId" element={session ? <EditQuiz /> : <Navigate to="/" />} />
           <Route path="/play/:quizId" element={session ? <PlayGame session={session} /> : <Navigate to="/" />} />
           <Route path="/review/:quizId" element={session ? <ReviewGame session={session} /> : <Navigate to="/" />} />
         </Routes>

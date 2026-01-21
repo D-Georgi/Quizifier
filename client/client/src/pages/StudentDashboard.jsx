@@ -8,7 +8,6 @@ export default function StudentDashboard({ session }) {
 
   useEffect(() => {
     const fetch = async () => {
-      // Join assignments with quiz details
       const { data } = await supabase
         .from('assignments')
         .select(`
@@ -16,10 +15,14 @@ export default function StudentDashboard({ session }) {
           quizzes ( id, title, status )
         `)
         .eq('student_id', session.user.id);
-      setAssignments(data);
+      setAssignments(data || []);
     };
     fetch();
   }, [session]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
 
   const handleEnter = (quiz) => {
     if (quiz.status === 'active') navigate(`/play/${quiz.id}`);
@@ -28,7 +31,13 @@ export default function StudentDashboard({ session }) {
 
   return (
     <div className="p-6 max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold mb-6">My Quizzes</h1>
+      <div className="flex justify-between items-center mb-6 border-b pb-4">
+        <h1 className="text-2xl font-bold">My Quizzes</h1>
+        <button onClick={handleLogout} className="text-sm text-red-600 hover:text-red-800 font-semibold border border-red-200 px-3 py-1 rounded hover:bg-red-50">
+          Sign Out
+        </button>
+      </div>
+
       <div className="grid gap-4">
         {assignments.map(({ quizzes: quiz }) => (
           <div key={quiz.id} className="bg-white p-4 rounded shadow flex justify-between items-center">
@@ -45,6 +54,9 @@ export default function StudentDashboard({ session }) {
             </button>
           </div>
         ))}
+        {assignments.length === 0 && (
+          <p className="text-gray-500 text-center mt-10">No quizzes assigned yet.</p>
+        )}
       </div>
     </div>
   );
